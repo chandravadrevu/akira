@@ -1,0 +1,12 @@
+my-nginx:
+  image: ubuntu-nginx
+  volumes:
+    - /my/static/content:/data/www
+    - /my/nginx.conf:/etc/nginx/nginx.conf
+    - /my/conf.d/default.conf:/etc/nginx/conf.d/default.conf
+  ports:
+    - "8080:80"
+  environment:
+    - NGINX_HOST=example.com
+    - NGINX_PORT=80
+  command: /bin/bash -c "nginx -g 'daemon off;'"
