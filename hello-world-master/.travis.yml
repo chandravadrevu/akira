@@ -1,0 +1,19 @@
+language: python
+dist: trusty
+sudo: required
+services:
+  - docker
+
+script:
+  - pip install ansible-tower-cli
+  - pip install ansible
+  - pip install ansible-container
+  - pip install docker
+  - ansible-container --debug build
+  - ansible-container --debug run
+  - ansible-playbook run-tests.yml
+  - tower-cli config host "http://${TOWER_HOST}"
+  - tower-cli config username ${TOWER_USER}
+  - tower-cli config password ${TOWER_PASSWORD}
+  - tower-cli config verify_ssl false
+  - "tower-cli job launch --job-template=${TOWER_TEMPLATE} --extra-vars='instance_tag: dsmith'"

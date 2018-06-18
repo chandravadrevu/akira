@@ -1,0 +1,90 @@
+# deploy.yml
+# Deploys hello-world to a target host.
+---
+- name: Deploy hello-world to a remote host
+  hosts: "tag_awx_user_{{ instance_tag }}"
+  gather_facts: yes 
+  remote_user: centos
+  vars:
+    deployment_path: /home/centos/hello-world 
+  tasks: 
+
+    - name: Remove existing project directory 
+      file:
+        path: '{{ deployment_path }}'
+        state: absent 
+
+    - name: Remove existing containers
+      shell: docker rm --force $(docker ps -qa)
+      ignore_errors: yes
+
+    - name: Remove existing images
+      shell: docker rmi --force $(docker images -qa)
+      ignore_errors: yes
+
+    - name: Clone the project 
+      git:
+        repo: 'https://github.com/chouseknecht/hello-world.git'
+        dest: '{{ deployment_path }}'
+
+    - name: Build the container
+      command: ansible-container --debug build
+      args:
+        chdir: '{{ deployment_path }}'
+      register: output
+      ignore_errors: yes
+
+    - name: Show output if failed
+      debug: var=output
+      when: output.rc != 0
+
+    - name: Build rc should be 0
+      assert:
+        that:
+        - output.rc == 0
+
+    - name: Launch
+      command: ansible-container --debug run
+      args:
+        chdir: '{{ deployment_path }}'
+      register: output
+      ignore_errors: yes
+
+    - name: Show output if failed
+      debug: var=output
+      when: output.rc != 0
+
+    - name: Run rc should be 0
+      assert:
+        that:
+        - output.rc == 0
+
+- name: Run tests
+  hosts: "tag_awx_user_{{ instance_tag }}"
+  vars: 
+    DOCKER_HOST: 127.0.0.1
+  gather_facts: no
+  remote_user: centos
+  tasks:
+    - name: Make a tempdir
+      tempfile:
+        state: directory
+        suffix: test
+      register: tempdir
+
+    - name: Get the index
+      get_url:
+        url: "http://{{ DOCKER_HOST }}:4000/"
+        dest: "{{ tempdir.path }}/url.txt"
+      register: result
+
+    - name: Make sure everything is good
+      assert:
+        that:
+          - result.status_code == 200
+
+    - name: Remove the tempdir
+      file:
+        path: "{{ tempdir.path }}"
+        state: absent
+

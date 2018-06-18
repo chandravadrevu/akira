@@ -1,0 +1,19 @@
+- hosts: localhost
+  gather_facts: false
+  vars:
+    DOCKER_HOST: 127.0.0.1
+  tasks:
+    - name: Make a tempdir
+      tempfile:
+        state: directory
+        suffix: test
+      register: tempdir
+    - name: Get the index
+      get_url:
+        url: "http://{{ DOCKER_HOST }}:4000/"
+        dest: "{{ tempdir.path }}/url.txt"
+      register: result
+    - name: Make sure everything is good
+      assert:
+        that:
+          - result.status_code == 200
