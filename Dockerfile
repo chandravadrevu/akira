@@ -1,6 +1,6 @@
 FROM ubuntu:16.04
 
-LABEL maintainer="A. Groisman <alexgroisman@akira-tech.com"
+LABEL maintainer="chandra"
 ENV DEBIAN_FRONTEND noninteractive
 # Install basics:
 RUN apt-get -y update && apt-get -y upgrade
